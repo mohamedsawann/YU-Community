@@ -1,19 +1,15 @@
-//
-//  ClubEditView.swift
-//  YU COMMUNITYS
-//
-//  Created by M7MD Sawan on 17/10/1446 AH.
-//
-
 import SwiftUI
 
 struct ClubEditView: View {
     @Binding var club: Club
     @EnvironmentObject var clubViewModel: ClubViewModel
+    @EnvironmentObject var appSettings: AppSettingsViewModel
     @Environment(\.presentationMode) var presentationMode
     
     @State private var name: String
+    @State private var nameAr: String
     @State private var description: String
+    @State private var descriptionAr: String
     @State private var logoURL: String
     @State private var email: String
     @State private var website: String
@@ -27,7 +23,9 @@ struct ClubEditView: View {
         
         // Initialize state properties from club
         _name = State(initialValue: club.wrappedValue.name)
+        _nameAr = State(initialValue: club.wrappedValue.nameAr ?? "")
         _description = State(initialValue: club.wrappedValue.description)
+        _descriptionAr = State(initialValue: club.wrappedValue.descriptionAr ?? "")
         _logoURL = State(initialValue: club.wrappedValue.logoURL ?? "")
         _email = State(initialValue: club.wrappedValue.email ?? "")
         _website = State(initialValue: club.wrappedValue.website ?? "")
@@ -42,11 +40,12 @@ struct ClubEditView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Club Information")) {
-                    TextField("Club Name", text: $name)
+                Section(header: Text(appSettings.language == .arabic ? "معلومات النادي" : "Club Information")) {
+                    TextField(appSettings.language == .arabic ? "اسم النادي" : "Club Name", text: $name)
+                    TextField(appSettings.language == .arabic ? "اسم النادي (عربي)" : "Club Name (Arabic)", text: $nameAr)
                     
                     VStack(alignment: .leading) {
-                        Text("Description")
+                        Text(appSettings.language == .arabic ? "الوصف" : "Description")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         TextEditor(text: $description)
@@ -57,56 +56,71 @@ struct ClubEditView: View {
                             )
                     }
                     
-                    TextField("Logo URL", text: $logoURL)
+                    VStack(alignment: .leading) {
+                        Text(appSettings.language == .arabic ? "الوصف (عربي)" : "Description (Arabic)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        TextEditor(text: $descriptionAr)
+                            .frame(minHeight: 100)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                    }
+                    
+                    TextField(appSettings.language == .arabic ? "رابط الشعار" : "Logo URL", text: $logoURL)
                 }
                 
-                Section(header: Text("Contact Information")) {
-                    TextField("Email", text: $email)
+                Section(header: Text(appSettings.language == .arabic ? "معلومات الاتصال" : "Contact Information")) {
+                    TextField(appSettings.language == .arabic ? "البريد الإلكتروني" : "Email", text: $email)
                         .keyboardType(.emailAddress)
                     
-                    TextField("Website", text: $website)
+                    TextField(appSettings.language == .arabic ? "الموقع الإلكتروني" : "Website", text: $website)
                         .keyboardType(.URL)
                     
-                    TextField("Registration Link", text: $registrationLink)
+                    TextField(appSettings.language == .arabic ? "رابط التسجيل" : "Registration Link", text: $registrationLink)
                         .keyboardType(.URL)
                 }
                 
                 Section {
                     Button(action: saveClub) {
-                        Text("Save Changes")
+                        Text(appSettings.language == .arabic ? "حفظ التغييرات" : "Save Changes")
                             .frame(maxWidth: .infinity, alignment: .center)
                             .foregroundColor(.white)
                             .padding()
-                            .background(formIsValid ? Color.blue : Color.gray)
+                            .background(formIsValid ? Color.orange : Color.gray)
                             .cornerRadius(10)
                     }
                     .disabled(!formIsValid)
                 }
             }
-            .navigationTitle("Edit Club")
-            .navigationBarItems(trailing: Button("Cancel") {
+            .navigationTitle(appSettings.language == .arabic ? "تعديل النادي" : "Edit Club")
+            .navigationBarItems(trailing: Button(appSettings.language == .arabic ? "إلغاء" : "Cancel") {
                 presentationMode.wrappedValue.dismiss()
             })
             .alert(isPresented: $showingAlert) {
                 Alert(
-                    title: Text("Form Validation"),
+                    title: Text(appSettings.language == .arabic ? "التحقق من صحة النموذج" : "Form Validation"),
                     message: Text(alertMessage),
-                    dismissButton: .default(Text("OK"))
+                    dismissButton: .default(Text(appSettings.language == .arabic ? "حسنًا" : "OK"))
                 )
             }
+            .environment(\.layoutDirection, appSettings.language.isRTL ? .rightToLeft : .leftToRight)
         }
     }
     
     private func saveClub() {
         guard formIsValid else {
-            alertMessage = "Please fill out all required fields."
+            alertMessage = appSettings.language == .arabic ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields."
             showingAlert = true
             return
         }
         
         // Update the club binding
         club.name = name
+        club.nameAr = nameAr.isEmpty ? nil : nameAr
         club.description = description
+        club.descriptionAr = descriptionAr.isEmpty ? nil : descriptionAr
         club.logoURL = logoURL.isEmpty ? nil : logoURL
         club.email = email.isEmpty ? nil : email
         club.website = website.isEmpty ? nil : website

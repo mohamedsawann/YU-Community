@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject var authViewModel = AuthViewModel()
     @StateObject var clubViewModel = ClubViewModel()
+    @StateObject var appSettings = AppSettingsViewModel()
     @State private var selectedTab = 0
     
     var body: some View {
@@ -10,35 +11,60 @@ struct ContentView: View {
             HomeView()
                 .tabItem {
                     Image(systemName: "house.fill")
-                    Text("Home")
+                    Text(appSettings.language == .arabic ? "الرئيسية" : "Home")
                 }
                 .tag(0)
             
             ClubsView()
                 .tabItem {
                     Image(systemName: "person.3.fill")
-                    Text("Clubs")
+                    Text(appSettings.language == .arabic ? "النوادي" : "Clubs")
                 }
                 .tag(1)
+            
+            ScheduleView()
+                .tabItem {
+                    Image(systemName: "calendar")
+                    Text(appSettings.language == .arabic ? "الجدول" : "Schedule")
+                }
+                .tag(2)
+                
+            NotificationsView()
+                .tabItem {
+                    Image(systemName: "bell.fill")
+                    Text(appSettings.language == .arabic ? "الإشعارات" : "Notifications")
+                }
+                .badge(clubViewModel.filteredNotificationsForUser(admin: authViewModel.currentAdmin).filter { !$0.isRead }.count)
+                .tag(3)
             
             SettingsView()
                 .tabItem {
                     Image(systemName: "gear")
-                    Text("Settings")
+                    Text(appSettings.language == .arabic ? "الإعدادات" : "Settings")
                 }
-                .tag(2)
+                .tag(4)
         }
+        .accentColor(.orange)
+        // Apply layout direction to the root view
+        .environment(\.layoutDirection, appSettings.language.isRTL ? .rightToLeft : .leftToRight)
+        // Apply color scheme based on appearance setting
+        .preferredColorScheme(appSettings.isDarkMode ? .dark : .light)
+        // Force view refresh when language or appearance changes
+        .id("\(appSettings.language.rawValue)-\(appSettings.isDarkMode)")
         .environmentObject(authViewModel)
         .environmentObject(clubViewModel)
+        .environmentObject(appSettings)
         .sheet(isPresented: $authViewModel.showLoginModal) {
             LoginView()
                 .environmentObject(authViewModel)
+                .environmentObject(appSettings)
         }
     }
 }
 
 struct LoginView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var appSettings: AppSettingsViewModel
     @State private var username = ""
     @State private var password = ""
     @State private var rememberMe = false
@@ -46,55 +72,66 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Nice to see you again")
+            Text(appSettings.language == .arabic ? "من الجميل رؤيتك مرة أخرى" : "Nice to see you again")
                 .font(.largeTitle)
                 .fontWeight(.bold)
+                .multilineTextAlignment(.center)
+                .padding(.top)
             
             VStack(alignment: .leading, spacing: 8) {
-                TextField("Username", text: $username)
+                Text(appSettings.language == .arabic ? "اسم المستخدم" : "Username")
+                    .font(.headline)
+                
+                TextField("", text: $username)
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
                     .autocapitalization(.none)
+                    .disableAutocorrection(true)
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                SecureField("Enter password", text: $password)
+                Text(appSettings.language == .arabic ? "كلمة المرور" : "Password")
+                    .font(.headline)
+                
+                SecureField("", text: $password)
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
             }
             
             HStack {
-                Toggle("Remember me", isOn: $rememberMe)
-                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                Toggle(appSettings.language == .arabic ? "تذكرني" : "Remember me", isOn: $rememberMe)
+                    .toggleStyle(SwitchToggleStyle(tint: .orange))
                 Spacer()
-                Button("Forgot password?") {
+                Button(appSettings.language == .arabic ? "نسيت كلمة المرور؟" : "Forgot password?") {
                     // Handle forgot password
                 }
-                .foregroundColor(.blue)
+                .foregroundColor(.orange)
             }
             
             if let error = authViewModel.errorMessage {
-                Text(error)
+                Text(appSettings.language == .arabic ? "اسم المستخدم أو كلمة المرور غير صحيحة" : error)
                     .foregroundColor(.red)
+                    .padding(.top, 5)
             }
             
             Button(action: {
                 authViewModel.login(username: username, password: password)
             }) {
-                Text("Sign in")
+                Text(appSettings.language == .arabic ? "تسجيل الدخول" : "Sign in")
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(Color.orange)
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
+            .padding(.top)
             
             Button(action: {
                 presentationMode.wrappedValue.dismiss()
             }) {
-                Text("Continue without signing in")
+                Text(appSettings.language == .arabic ? "الاستمرار بدون تسجيل الدخول" : "Continue without signing in")
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color(.systemGray6))
@@ -105,43 +142,6 @@ struct LoginView: View {
             Spacer()
         }
         .padding()
-    }
-}
-
-struct SettingsView: View {
-    @EnvironmentObject var authViewModel: AuthViewModel
-    
-    var body: some View {
-        NavigationView {
-            List {
-                if authViewModel.isAuthenticated {
-                    Section(header: Text("Account")) {
-                        Text("Logged in as: \(authViewModel.currentAdmin?.username ?? "")")
-                        Text("Admin Type: \(authViewModel.currentAdmin?.adminType.rawValue ?? "")")
-                        if let affiliation = authViewModel.currentAdmin?.clubAffiliation {
-                            Text("Club: \(affiliation)")
-                        }
-                        
-                        Button("Log Out") {
-                            authViewModel.logout()
-                        }
-                        .foregroundColor(.red)
-                    }
-                } else {
-                    Section {
-                        Button("Log In") {
-                            authViewModel.showLoginModal = true
-                        }
-                    }
-                }
-                
-                Section(header: Text("About")) {
-                    Text("YU Community App v1.0")
-                    Text("© YU Community Team")
-                }
-                
-            }
-            .navigationTitle("Settings")
-        }
+        .environment(\.layoutDirection, appSettings.language.isRTL ? .rightToLeft : .leftToRight)
     }
 }

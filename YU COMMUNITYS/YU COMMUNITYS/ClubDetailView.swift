@@ -1,16 +1,10 @@
-//
-//  ClubDetailView.swift
-//  YU COMMUNITYS
-//
-//  Created by M7MD Sawan on 17/10/1446 AH.
-//
-
 import SwiftUI
 
 struct ClubDetailView: View {
     @State var club: Club
     @EnvironmentObject var clubViewModel: ClubViewModel
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var appSettings: AppSettingsViewModel
     @State private var showingEditView = false
     
     var canEdit: Bool {
@@ -18,7 +12,7 @@ struct ClubDetailView: View {
     }
     
     var clubPosts: [Post] {
-        clubViewModel.postsForClub(clubId: club.id)
+        clubViewModel.approvedPostsForClub(clubId: club.id)
     }
     
     var body: some View {
@@ -29,16 +23,25 @@ struct ClubDetailView: View {
                     // Club logo
                     ZStack {
                         Circle()
-                            .fill(Color.blue.opacity(0.1))
+                            .fill(Color.orange.opacity(0.1))
                             .frame(width: 100, height: 100)
                         
-                        Text(String(club.name.prefix(1)))
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.blue)
+                        if let logoURL = club.logoURL, !logoURL.isEmpty {
+                            // In a real app, use AsyncImage for remote images
+                            Image(logoURL)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 90, height: 90)
+                                .clipShape(Circle())
+                        } else {
+                            Text(String((appSettings.language == .arabic && club.nameAr != nil ? club.nameAr! : club.name).prefix(1)))
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.orange)
+                        }
                     }
                     
-                    Text(club.name)
+                    Text(appSettings.language == .arabic && club.nameAr != nil ? club.nameAr! : club.name)
                         .font(.title)
                         .fontWeight(.bold)
                 }
@@ -48,10 +51,10 @@ struct ClubDetailView: View {
                 // Club Details
                 VStack(alignment: .leading, spacing: 15) {
                     Group {
-                        Text("About")
+                        Text(appSettings.language == .arabic ? "نبذة عن النادي" : "About")
                             .font(.headline)
                         
-                        Text(club.description)
+                        Text(appSettings.language == .arabic && club.descriptionAr != nil ? club.descriptionAr! : club.description)
                             .font(.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -61,7 +64,7 @@ struct ClubDetailView: View {
                     
                     // Contact Information
                     Group {
-                        Text("Contact Information")
+                        Text(appSettings.language == .arabic ? "معلومات الاتصال" : "Contact Information")
                             .font(.headline)
                             .padding(.horizontal)
                         
@@ -75,10 +78,10 @@ struct ClubDetailView: View {
                             }
                             
                             if let registrationLink = club.registrationLink {
-                                Label("Registration Link", systemImage: "link")
+                                Label(appSettings.language == .arabic ? "رابط التسجيل" : "Registration Link", systemImage: "link")
                                 Text(registrationLink)
                                     .font(.caption)
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(.orange)
                             }
                         }
                         .padding(.horizontal)
@@ -89,14 +92,14 @@ struct ClubDetailView: View {
                     // Club Posts
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("Club Posts")
+                            Text(appSettings.language == .arabic ? "منشورات النادي" : "Club Posts")
                                 .font(.headline)
                             
                             Spacer()
                             
                             if canEdit {
                                 NavigationLink(destination: AddPostView()) {
-                                    Label("New Post", systemImage: "plus")
+                                    Label(appSettings.language == .arabic ? "منشور جديد" : "New Post", systemImage: "plus")
                                         .font(.caption)
                                 }
                             }
@@ -104,7 +107,7 @@ struct ClubDetailView: View {
                         .padding(.horizontal)
                         
                         if clubPosts.isEmpty {
-                            Text("No posts yet")
+                            Text(appSettings.language == .arabic ? "لا توجد منشورات حتى الآن" : "No posts yet")
                                 .foregroundColor(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
@@ -112,10 +115,10 @@ struct ClubDetailView: View {
                             ForEach(clubPosts) { post in
                                 NavigationLink(destination: PostDetailView(post: post)) {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text(post.title)
+                                        Text(appSettings.language == .arabic && post.titleAr != nil ? post.titleAr! : post.title)
                                             .font(.headline)
                                         
-                                        Text(post.description)
+                                        Text(appSettings.language == .arabic && post.descriptionAr != nil ? post.descriptionAr! : post.description)
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                             .lineLimit(2)
@@ -155,14 +158,8 @@ struct ClubDetailView: View {
         }
         .sheet(isPresented: $showingEditView) {
             ClubEditView(club: $club)
-                .environmentObject(clubViewModel)
         }
-        // Update the club reference when it changes in the ViewModel
-        .onAppear {
-            if let updatedClub = clubViewModel.clubs.first(where: { $0.id == club.id }) {
-                self.club = updatedClub
-            }
-        }
+        .environment(\.layoutDirection, appSettings.language.isRTL ? .rightToLeft : .leftToRight)
     }
     
     private func formattedDate(_ date: Date) -> String {
