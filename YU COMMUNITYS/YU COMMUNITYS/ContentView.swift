@@ -25,7 +25,7 @@ struct ContentView: View {
             ScheduleView()
                 .tabItem {
                     Image(systemName: "calendar")
-                    Text(appSettings.language == .arabic ? "الجدول" : "Schedule")
+                    Text(appSettings.language == .arabic ? "الفعاليات" : "Events")
                 }
                 .tag(2)
                 

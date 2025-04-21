@@ -89,6 +89,7 @@ enum NotificationType: String, Codable {
     case postApproval = "Post Approval"
     case postApproved = "Post Approved"
     case postDisapproved = "Post Disapproved"
+    case newPost = "New Post"
 }
 
 class AppSettingsViewModel: ObservableObject {
@@ -351,7 +352,7 @@ class ClubViewModel: ObservableObject {
             posts[index] = approvedPost
             
             // Create notification for the club admin
-            let notification = Notification(
+            let clubAdminNotification = Notification(
                 id: UUID(),
                 title: "Post Approved",
                 message: "Your post '\(post.title)' has been approved.",
@@ -364,7 +365,23 @@ class ClubViewModel: ObservableObject {
                 titleAr: "تمت الموافقة على المنشور",
                 messageAr: "تمت الموافقة على منشورك '\(post.titleAr ?? post.title)'."
             )
-            notifications.append(notification)
+            notifications.append(clubAdminNotification)
+            
+            // Create a public notification for all users about the new post
+            let publicNotification = Notification(
+                id: UUID(),
+                title: "New Post: \(post.title)",
+                message: "A new post from \(clubs.first(where: { $0.id == post.clubId })?.name ?? "a club") has been published.",
+                date: Date(),
+                isRead: false,
+                relatedEventId: nil,
+                relatedPostId: post.id,
+                clubId: post.clubId,
+                notificationType: .newPost,
+                titleAr: "منشور جديد: \(post.titleAr ?? post.title)",
+                messageAr: "تم نشر منشور جديد من \(clubs.first(where: { $0.id == post.clubId })?.nameAr ?? "نادي")."
+            )
+            notifications.append(publicNotification)
         }
     }
     
@@ -552,9 +569,11 @@ class ClubViewModel: ObservableObject {
     
     func filteredNotificationsForUser(admin: Admin?) -> [Notification] {
         guard let admin = admin else {
-            // For regular users, show only public notifications (like new events)
+            // For regular users, show only public notifications (like new events and new approved posts)
             return notifications.filter { notification in
-                notification.notificationType == .newEvent || notification.notificationType == .upcomingEvent
+                notification.notificationType == .newEvent ||
+                notification.notificationType == .upcomingEvent ||
+                notification.notificationType == .newPost
             }
         }
         
@@ -567,7 +586,9 @@ class ClubViewModel: ObservableObject {
             
             return notifications.filter { notification in
                 // Club admins see event notifications from all clubs
-                if notification.notificationType == .newEvent || notification.notificationType == .upcomingEvent {
+                if notification.notificationType == .newEvent ||
+                   notification.notificationType == .upcomingEvent ||
+                   notification.notificationType == .newPost {
                     return true
                 }
                 

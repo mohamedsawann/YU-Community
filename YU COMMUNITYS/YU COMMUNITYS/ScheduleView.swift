@@ -178,7 +178,7 @@ struct ScheduleView: View {
                 
                 Spacer()
             }
-            .navigationTitle(appSettings.language == .arabic ? "الجدول" : "Schedule")
+            .navigationTitle(appSettings.language == .arabic ? "الفعاليات" : "Events")
             .sheet(isPresented: $showingEventForm) {
                 AddEventView(selectedDate: selectedDate)
             }

@@ -227,14 +227,10 @@ struct AboutAppView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
-                    Image(systemName: "person.3.fill")
-                        .resizable()
-                        .frame(width: 80, height: 60)
-                        .foregroundColor(.orange)
-                    
-                    Text("YU Community")
-                        .font(.title)
-                        .fontWeight(.bold)
+                    Image("yu_community_logo")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 80, height: 80)
                     
                     Text("Version 1.0.0")
                         .font(.subheadline)
@@ -259,7 +255,17 @@ struct AboutAppView: View {
                         .font(.headline)
                         .padding(.top)
                     
-                    Text("YU Development Team")
+                    Text("YU Community Development Team")
+                        .font(.body)
+                    
+                    Text("Mohamed Sawan\nMeshal Alshmari")
+                        .font(.body)
+                    
+                    Text(appSettings.language == .arabic ? "مصمم اللوجو" : "Logo Designer")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    Text("Faisal Alzeer")
                         .font(.body)
                     
                     Text("© 2025 YU Community. All rights reserved.")

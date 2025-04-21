@@ -7,11 +7,12 @@ struct NotificationsView: View {
     @State private var selectedCategory: String? = nil
     @State private var showingClearConfirmation = false
     
-    // Define notification categories
+    // Define notification categories based on user role
     var categories: [(String, String, String, String)] {
         let basicCategories = [
             ("all", "All", "الكل", "bell.fill"),
-            ("events", "Events", "الفعاليات", "calendar")
+            ("events", "Events", "الفعاليات", "calendar"),
+            ("posts", "Posts", "المنشورات", "doc.richtext")
         ]
         
         // Only show admin categories to admins
@@ -31,7 +32,7 @@ struct NotificationsView: View {
     }
     
     var filteredNotifications: [Notification] {
-        // First filter by user role
+        // First filter by user role - this now properly restricts based on admin type and club affiliation
         let userFiltered = clubViewModel.filteredNotificationsForUser(admin: authViewModel.currentAdmin)
         
         // Then filter by selected category if any
@@ -44,6 +45,10 @@ struct NotificationsView: View {
         case "events":
             return userFiltered.filter {
                 $0.notificationType == .newEvent || $0.notificationType == .upcomingEvent
+            }.sorted(by: { $0.date > $1.date })
+        case "posts":
+            return userFiltered.filter {
+                $0.notificationType == .newPost || $0.notificationType == .postApproved
             }.sorted(by: { $0.date > $1.date })
         case "approvals":
             return userFiltered.filter {
@@ -136,7 +141,7 @@ struct NotificationsView: View {
                         Button(action: {
                             showingClearConfirmation = true
                         }) {
-                            Text(appSettings.language == .arabic ? "تحديد الكل كمقروء" : "Mark All as Read")
+                            Text(appSettings.language == .arabic ? "تحديد الكل كمقروء" : "Mark All Read")
                                 .font(.caption)
                         }
                     }
@@ -231,6 +236,8 @@ struct NotificationCell: View {
             return .blue
         case .postDisapproved:
             return .red
+        case .newPost:
+            return .purple
         }
     }
     
@@ -244,6 +251,8 @@ struct NotificationCell: View {
             return "checkmark.circle"
         case .postDisapproved:
             return "xmark.circle"
+        case .newPost:
+            return "doc.richtext"
         }
     }
     

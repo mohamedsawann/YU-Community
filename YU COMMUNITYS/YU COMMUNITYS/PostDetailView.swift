@@ -40,26 +40,25 @@ struct PostDetailView: View {
                     .fontWeight(.bold)
                     .padding(.horizontal)
                 
-                // Post image if available from either source
+                // Post image if available
                 if let image = post.image {
                     // Use the actual image data
                     Image(uiImage: image)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .aspectRatio(contentMode: .fit)
                         .frame(height: 250)
                         .frame(maxWidth: .infinity)
-                        .clipped()
+                        .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
                         .padding(.horizontal)
                 } else if let imageURL = post.imageURL {
-                    // Fallback for URLs that couldn't be loaded
+                    // Fallback for URLs
                     Image(systemName: "photo")
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .aspectRatio(contentMode: .fit)
                         .frame(height: 250)
                         .frame(maxWidth: .infinity)
                         .background(Color.gray.opacity(0.3))
-                        .clipped()
                         .overlay(
                             Text(appSettings.language == .arabic ? "صورة: \(imageURL)" : "Image: \(imageURL)")
                                 .foregroundColor(.white)
@@ -257,7 +256,7 @@ struct DisapprovalView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text(appSettings.language == .arabic ? "سبب الرفض" : "Reason for Disapproval")) {
+                Section(header: Text(appSettings.language == .arabic ? "سبب الرفض" : "Reason for disapproval")) {
                     TextEditor(text: $reason)
                         .frame(minHeight: 100)
                 }
@@ -269,13 +268,15 @@ struct DisapprovalView: View {
                     }) {
                         Text(appSettings.language == .arabic ? "رفض المنشور" : "Disapprove Post")
                             .foregroundColor(.red)
-                            .frame(maxWidth: .infinity, alignment: .center)
                     }
+                    .disabled(reason.isEmpty)
                 }
             }
             .navigationTitle(appSettings.language == .arabic ? "رفض المنشور" : "Disapprove Post")
-            .navigationBarItems(trailing: Button(appSettings.language == .arabic ? "إلغاء" : "Cancel") {
+            .navigationBarItems(trailing: Button(action: {
                 presentationMode.wrappedValue.dismiss()
+            }) {
+                Text(appSettings.language == .arabic ? "إلغاء" : "Cancel")
             })
             .environment(\.layoutDirection, appSettings.language.isRTL ? .rightToLeft : .leftToRight)
         }
